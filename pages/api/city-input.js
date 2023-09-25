@@ -20,6 +20,7 @@ export default async function handler(req, res) {
         headers: headers
       });
       let data = await response.json();
+      console.log(`List items response for ${itemName}:`, data);
 
       let itemId;
       if (!data.items || data.items.length === 0) {
@@ -38,16 +39,19 @@ export default async function handler(req, res) {
           })
         });
         data = await response.json();
+        console.log(`Create item response for ${itemName}:`, data);
         itemId = data.id;
 
         // Publish the item
-        await fetch(`https://api.webflow.com/collections/${collectionId}/items/publish`, {
+        response = await fetch(`https://api.webflow.com/collections/${collectionId}/items/publish`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
             publishedItemIds: [itemId]
           })
         });
+        data = await response.json();
+        console.log(`Publish item response for ${itemName}:`, data);
       } else {
         itemId = data.items[0].id;
       }
@@ -63,6 +67,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ status: 'success' });
   } catch (error) {
+    console.log('Error:', error);
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }
