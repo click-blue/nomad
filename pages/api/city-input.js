@@ -9,7 +9,7 @@ export default async function handler(req, res) {
     return res.status(405).end();
   }
 
-  let { city, country } = req.body;
+  const { city, country } = req.body;
   const headers = {
     'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
     'Content-Type': 'application/json',
@@ -64,12 +64,7 @@ export default async function handler(req, res) {
     // Step 2: Then check and publish city, linking it to the country
     await getOrCreateItem('6511b5388842397b68f73aad', city, countryId);
 
-    // Clear variables
-    city = null;
-    country = null;
-
-    // Redirect to the admin input page
-    return res.redirect('https://www.nomad.style/admin/input');
+    return res.status(200).json({ status: 'success' });
   } catch (error) {
     console.log('Error:', JSON.stringify(error, null, 2));
     return res.status(500).json({ status: 'error', error: error.message });
