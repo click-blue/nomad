@@ -1,6 +1,7 @@
 // pages/api/city-input.js
 
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
+
 const WEBFLOW_API_KEY = process.env.WEBFLOW_API_KEY;
 
 export default async function handler(req, res) {
