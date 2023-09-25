@@ -31,21 +31,25 @@ export default async function handler(req, res) {
         response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
           method: 'POST',
           headers: headers,
-          body: JSON.stringify({ fieldData })
+          body: JSON.stringify({
+            isArchived: false,
+            isDraft: false,
+            fieldData
+          })
         });
         data = await response.json();
-        itemId = data._id;
+        itemId = data.id;
 
         // Publish the item
         await fetch(`https://api.webflow.com/collections/${collectionId}/items/publish`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
-            itemIds: [itemId]
+            publishedItemIds: [itemId]
           })
         });
       } else {
-        itemId = data.items[0]._id;
+        itemId = data.items[0].id;
       }
 
       return itemId;
