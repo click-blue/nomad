@@ -10,6 +10,11 @@ export default async function handler(req, res) {
   }
 
   const { city, country } = req.body;
+
+  if (!country) {
+    return res.status(400).json({ status: 'failed', error: 'Country name is required' });
+  }
+
   const headers = {
     'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
     'Content-Type': 'application/json',
@@ -18,7 +23,7 @@ export default async function handler(req, res) {
 
   try {
     const createCountryItem = async () => {
-      const collectionId = '6511b5541b122aea972eaf8f'
+      const collectionId = '6511b5541b122aea972eaf8f';
       const fieldData = { name: country };
 
       const response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
