@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
   try {
     const createCountryItem = async () => {
-      const collectionId = 'Your_Countries_Collection_ID_Here'; // Replace with your actual Collection ID for countries
+      const collectionId = '6511b5541b122aea972eaf8f'
       const fieldData = { name: country };
 
       const response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
