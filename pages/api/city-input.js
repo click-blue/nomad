@@ -28,6 +28,7 @@ export default async function handler(req, res) {
         if (relatedCountryId) {
           fieldData.country = relatedCountryId;
         }
+        
 
         response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
           method: 'POST',
