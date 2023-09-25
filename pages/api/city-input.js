@@ -22,23 +22,27 @@ export default async function handler(req, res) {
   };
 
   const getOrCreateItem = async (collectionId, itemName, relatedCountryId = null) => {
-    console.log(`Fetching or creating item: ${itemName} in collection: ${collectionId}`);
-    
-    let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items?limit=1&name=${itemName}`, {
+    let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
       headers: headers
     });
     let data = await response.json();
-    console.log(`Fetch response: ${JSON.stringify(data)}`);
-
-    let itemId;
-    if (!data.items || data.items.length === 0) {
+  
+    let itemId = null;
+    if (data.items) {
+      const foundItem = data.items.find(item => item.fieldData.name === itemName);
+      if (foundItem) {
+        itemId = foundItem.id;
+      }
+    }
+  
+    if (!itemId) {
       console.log(`Item not found, creating new item: ${itemName}`);
       
       const fieldData = { name: itemName };
       if (relatedCountryId) {
         fieldData.country = relatedCountryId;
       }
-
+  
       response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
         method: 'POST',
         headers: headers,
@@ -49,11 +53,8 @@ export default async function handler(req, res) {
         })
       });
       data = await response.json();
-      console.log(`Create item response: ${JSON.stringify(data)}`);
-      
       itemId = data.id;
-      console.log(`Created item with ID: ${itemId}`);
-
+  
       // Publish the item
       response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/publish`, {
         method: 'POST',
@@ -62,15 +63,12 @@ export default async function handler(req, res) {
           publishedItemIds: [itemId]
         })
       });
-      data = await response.json();
-      console.log(`Publish item response: ${JSON.stringify(data)}`);
-    } else {
-      itemId = data.items[0].id;
-      console.log(`Found existing item with ID: ${itemId}`);
+      await response.json();
     }
-
+  
     return itemId;
   };
+  
 
   try {
     // Step 1: Check and publish country first, and get its ID
