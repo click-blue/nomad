@@ -20,7 +20,7 @@ export default async function handler(req, res) {
         headers: headers
       });
       let data = await response.json();
-      console.log(`List items response for ${itemName}:`, data);
+      console.log(`List items response for ${itemName}:`, JSON.stringify(data, null, 2));
 
       let itemId;
       if (!data.items || data.items.length === 0) {
@@ -28,7 +28,6 @@ export default async function handler(req, res) {
         if (relatedCountryId) {
           fieldData.country = relatedCountryId;
         }
-        
 
         response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
           method: 'POST',
@@ -40,7 +39,7 @@ export default async function handler(req, res) {
           })
         });
         data = await response.json();
-        console.log(`Create item response for ${itemName}:`, data);
+        console.log(`Create item response for ${itemName}:`, JSON.stringify(data, null, 2));
         itemId = data.id;
 
         // Publish the item
@@ -52,7 +51,7 @@ export default async function handler(req, res) {
           })
         });
         data = await response.json();
-        console.log(`Publish item response for ${itemName}:`, data);
+        console.log(`Publish item response for ${itemName}:`, JSON.stringify(data, null, 2));
       } else {
         itemId = data.items[0].id;
       }
@@ -68,7 +67,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ status: 'success' });
   } catch (error) {
-    console.log('Error:', error);
+    console.log('Error:', JSON.stringify(error, null, 2));
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }
