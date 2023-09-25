@@ -52,6 +52,7 @@ export default async function handler(req, res) {
       console.log(`Create item response: ${JSON.stringify(data)}`);
       
       itemId = data.id;
+      console.log(`Created item with ID: ${itemId}`);
 
       // Publish the item
       response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/publish`, {
@@ -65,6 +66,7 @@ export default async function handler(req, res) {
       console.log(`Publish item response: ${JSON.stringify(data)}`);
     } else {
       itemId = data.items[0].id;
+      console.log(`Found existing item with ID: ${itemId}`);
     }
 
     return itemId;
@@ -74,10 +76,12 @@ export default async function handler(req, res) {
     // Step 1: Check and publish country first, and get its ID
     console.log("Step 1: Processing country");
     const countryId = await getOrCreateItem('6511b5541b122aea972eaf8f', country);
+    console.log(`Country ID: ${countryId}`);
 
     // Step 2: Then check and publish city, linking it to the country
     console.log("Step 2: Processing city");
-    await getOrCreateItem('6511b5388842397b68f73aad', city, countryId);
+    const cityId = await getOrCreateItem('6511b5388842397b68f73aad', city, countryId);
+    console.log(`City ID: ${cityId}`);
 
     console.log("Successfully processed both country and city");
     return res.status(200).json({ status: 'success' });
