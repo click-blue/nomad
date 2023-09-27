@@ -1,0 +1,9 @@
+{
+    "generateMetaTitle": {
+      "endpoint": "https://api.openai.com/v1/engines/davinci-codex/completions",
+      "method": "POST",
+      "prompt": "Generate an SEO-ready meta title for a touristic guide for Nomad.Style for {city}.",
+      "maxTokens": 10
+    }
+  }
+  

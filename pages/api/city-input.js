@@ -1,6 +1,8 @@
 // pages/api/city-input.js
 
 import fetch from 'node-fetch';
+import taskConfig from './taskConfig';  // Import your taskConfig
+import generateMetaTitle from './generateMetaTitle';  // Import your generateMetaTitle function
 
 const WEBFLOW_API_KEY = process.env.WEBFLOW_API_KEY;
 
@@ -21,7 +23,7 @@ export default async function handler(req, res) {
     'Accept': 'application/json'
   };
 
-  const getOrCreateItem = async (collectionId, itemName, relatedCountryId = null) => {
+  const getOrCreateItem = async (collectionId, itemName, relatedCountryId = null, additionalFields = {}) => {
     let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
       headers: headers
     });
@@ -38,7 +40,7 @@ export default async function handler(req, res) {
     if (!itemId) {
       console.log(`Item not found, creating new item: ${itemName}`);
       
-      const fieldData = { name: itemName };
+      const fieldData = { name: itemName, ...additionalFields };
       if (relatedCountryId) {
         fieldData.country = relatedCountryId;
       }
@@ -68,7 +70,6 @@ export default async function handler(req, res) {
   
     return itemId;
   };
-  
 
   try {
     // Step 1: Check and publish country first, and get its ID
@@ -76,9 +77,18 @@ export default async function handler(req, res) {
     const countryId = await getOrCreateItem('6511b5541b122aea972eaf8f', country);
     console.log(`Country ID: ${countryId}`);
 
+    // Execute tasks
+    let additionalFields = {};
+    for (const task of taskConfig) {
+      if (task.name === 'generateMetaTitle') {
+        additionalFields['Meta Title'] = await generateMetaTitle(city);
+      }
+      // Add more tasks here as needed
+    }
+
     // Step 2: Then check and publish city, linking it to the country
     console.log("Step 2: Processing city");
-    const cityId = await getOrCreateItem('6511b5388842397b68f73aad', city, countryId);
+    const cityId = await getOrCreateItem('6511b5388842397b68f73aad', city, countryId, additionalFields);
     console.log(`City ID: ${cityId}`);
 
     console.log("Successfully processed both country and city");
