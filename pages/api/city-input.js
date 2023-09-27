@@ -7,27 +7,28 @@ const WEBFLOW_API_KEY = process.env.WEBFLOW_API_KEY;
 
 async function checkOrCreateItem(collectionId, name) {
   const slug = name.toLowerCase().replace(/\s+/g, '-');
-
+  
   // Check if item exists
-  let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items?filter[slug]=${slug}`, {
+  let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
-    },
+    }
   });
-
+  
   if (response.status !== 200) {
     const errorText = await response.text();
     throw new Error(`Webflow API request failed with status code ${response.status}: ${errorText}`);
   }
 
   const existingItems = await response.json();
+  const existingItem = existingItems.items.find(item => item.slug === slug);
 
   // If item exists, return its ID
-  if (existingItems.items.length > 0) {
-    return existingItems.items[0]._id;
+  if (existingItem) {
+    return existingItem._id;
   }
 
   // Create a new item
@@ -73,7 +74,7 @@ export default async function handler(req, res) {
 
     // Processing city
     const cityId = await checkOrCreateItem('6511b5388842397b68f73aad', city);
-    const updateResponse = await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityId}`, {
+    await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
@@ -86,11 +87,6 @@ export default async function handler(req, res) {
         }
       })
     });
-
-    if (updateResponse.status !== 202) {
-      const errorText = await updateResponse.text();
-      throw new Error(`Webflow API request failed with status code ${updateResponse.status}: ${errorText}`);
-    }
 
     return res.status(200).json({ status: 'success' });
 
