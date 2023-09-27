@@ -1,15 +1,12 @@
 // pages/api/city-input.js
 
 import fetch from 'node-fetch';
-import { generateMetaTitle } from './generateMetaTitle';
-import taskConfig from './taskConfig.json';
 
 const WEBFLOW_API_KEY = process.env.WEBFLOW_API_KEY;
 
 export default async function handler(req, res) {
   console.log("Handler invoked");
-  console.log("Task Config:", JSON.stringify(taskConfig, null, 2));
-
+  
   if (req.method !== 'POST') {
     console.log("Method not POST");
     return res.status(405).end();
@@ -35,8 +32,6 @@ export default async function handler(req, res) {
       console.log(`Webflow response status: ${response.status}`);
 
       if (response.status !== 200) {
-        const errorText = await response.text();
-        console.log('Webflow response error text:', errorText);  // Log the error response text
         throw new Error(`Webflow API request failed with status code ${response.status}`);
       }
 
@@ -69,8 +64,6 @@ export default async function handler(req, res) {
         console.log(`Webflow response status: ${response.status}`);
 
         if (response.status !== 200) {
-          const errorText = await response.text();
-          console.log('Webflow response error text:', errorText);  // Log the error response text
           throw new Error(`Webflow API request failed when creating item with status code ${response.status}`);
         }
 
@@ -90,8 +83,6 @@ export default async function handler(req, res) {
         console.log(`Webflow response status: ${response.status}`);
 
         if (response.status !== 200) {
-          const errorText = await response.text();
-          console.log('Webflow response error text:', errorText);  // Log the error response text
           throw new Error(`Webflow API request failed when publishing item with status code ${response.status}`);
         }
 
@@ -107,24 +98,23 @@ export default async function handler(req, res) {
 
   try {
     // Step 1: Check and publish country first, and get its ID
-    console.log("About to enter task loop");
     console.log("Step 1: Processing country");
     const countryId = await getOrCreateItem('6511b5541b122aea972eaf8f', country);
     console.log(`Country ID: ${countryId}`);
 
-    // Execute tasks
+    /*
+    // Task loop is commented out
+    // Step 2: Execute tasks
     let additionalFields = {};
     for (const taskName in taskConfig) {
       console.log(`Processing task: ${taskName}`);
-      if (taskName === 'generateMetaTitle') {
-        additionalFields['Meta Title'] = await generateMetaTitle(city);
-      }
-      // Add more tasks here as needed
+      //... rest of task processing
     }
+    */
 
     // Step 2: Then check and publish city, linking it to the country
     console.log("Step 2: Processing city");
-    const cityId = await getOrCreateItem('6511b5388842397b68f73aad', city, countryId, additionalFields);
+    const cityId = await getOrCreateItem('6511b5388842397b68f73aad', city, countryId);  // Assuming no additional fields for now
     console.log(`City ID: ${cityId}`);
 
     console.log("Successfully processed both country and city");
