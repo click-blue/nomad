@@ -73,7 +73,9 @@ export default async function handler(req, res) {
 
     // Processing city
     const cityId = await checkOrCreateItem('6511b5388842397b68f73aad', city);
-    await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityId}`, {
+    const patchUrl = `https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityId}`;
+    console.log('Patch URL:', patchUrl);  // Log the patch URL to diagnose
+    await fetch(patchUrl, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
