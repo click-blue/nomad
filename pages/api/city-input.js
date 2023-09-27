@@ -1,14 +1,15 @@
 // pages/api/city-input.js
 
 import fetch from 'node-fetch';
-import taskConfig from './taskConfig';  // Import your taskConfig
-import generateMetaTitle from './generateMetaTitle';  // Import your generateMetaTitle function
+import taskConfig from './taskConfig'; 
+import { generateMetaTitle } from './generateMetaTitle';  
 
 const WEBFLOW_API_KEY = process.env.WEBFLOW_API_KEY;
 
 export default async function handler(req, res) {
   console.log("Handler invoked");
-  
+  console.log("Task Config:", JSON.stringify(taskConfig, null, 2));
+
   if (req.method !== 'POST') {
     console.log("Method not POST");
     return res.status(405).end();
@@ -73,14 +74,16 @@ export default async function handler(req, res) {
 
   try {
     // Step 1: Check and publish country first, and get its ID
+    console.log("About to enter task loop");
     console.log("Step 1: Processing country");
     const countryId = await getOrCreateItem('6511b5541b122aea972eaf8f', country);
     console.log(`Country ID: ${countryId}`);
 
     // Execute tasks
     let additionalFields = {};
-    for (const task of taskConfig) {
-      if (task.name === 'generateMetaTitle') {
+    for (const taskName in taskConfig) {
+      console.log(`Processing task: ${taskName}`);
+      if (taskName === 'generateMetaTitle') {
         additionalFields['Meta Title'] = await generateMetaTitle(city);
       }
       // Add more tasks here as needed

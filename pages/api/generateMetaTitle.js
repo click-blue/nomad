@@ -2,7 +2,7 @@
 
 
 import axios from 'axios';
-import taskConfig from './taskConfig.json';
+import taskConfig from './taskConfig';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
