@@ -27,13 +27,15 @@ export default async function handler(req, res) {
 
       // Check if the item already exists
       let response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
-        headers: headers
-      });
-      console.log(`Webflow response status: ${response.status}`);
+            headers: headers
+        });
+        console.log(`Webflow response status: ${response.status}`);
 
-      if (response.status !== 200) {
-        throw new Error(`Webflow API request failed with status code ${response.status}`);
-      }
+        if (response.status !== 200) {
+            const errorText = await response.text();
+            console.error('Webflow response error text:', errorText);  // Log the error response body
+            throw new Error(`Webflow API request failed with status code ${response.status}`);
+        }
 
       let data = await response.json();
       console.log('Webflow response data:', JSON.stringify(data, null, 2));
