@@ -32,12 +32,14 @@ export default async function handler(req, res) {
       let response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
         headers: headers
       });
+      console.log(`Webflow response status: ${response.status}`);
   
       if (response.status !== 200) {
         throw new Error(`Webflow API request failed with status code ${response.status}`);
       }
   
       let data = await response.json();
+      console.log('Webflow response data:', JSON.stringify(data, null, 2));
   
       if (data.items) {
         const foundItem = data.items.find(item => item.name === itemName);
@@ -62,6 +64,7 @@ export default async function handler(req, res) {
             fields: fieldData
           })
         });
+        console.log(`Webflow response status: ${response.status}`);
   
         if (response.status !== 200) {
           throw new Error(`Webflow API request failed when creating item with status code ${response.status}`);
@@ -70,6 +73,7 @@ export default async function handler(req, res) {
         // Get itemId from the response
         data = await response.json();
         itemId = data._id;
+        console.log('Webflow response data:', JSON.stringify(data, null, 2));
   
         // Publish the item
         response = await fetch(`https://api.webflow.com/collections/${collectionId}/items/publish`, {
@@ -79,6 +83,7 @@ export default async function handler(req, res) {
             itemIds: [itemId]
           })
         });
+        console.log(`Webflow response status: ${response.status}`);
   
         if (response.status !== 200) {
           throw new Error(`Webflow API request failed when publishing item with status code ${response.status}`);
@@ -125,3 +130,37 @@ export default async function handler(req, res) {
   }
 }
 
+// generateMetaTitle.js
+
+import axios from 'axios';
+import taskConfig from './taskConfig';
+
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+export async function generateMetaTitle(city) {
+  const config = taskConfig.generateMetaTitle;
+  const prompt = config.prompt.replace('{city}', city);
+
+  try {
+    const response = await axios.post(
+      config.endpoint,
+      {
+        prompt: prompt,
+        max_tokens: config.maxTokens
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const metaTitle = response.data.choices[0].text.trim();
+    console.log('Generated meta title:', metaTitle);
+    return metaTitle;
+  } catch (error) {
+    console.error('Error generating meta title:', error);
+    throw error;
+  }
+}
