@@ -19,45 +19,68 @@ export default async function handler(req, res) {
   };
 
   try {
-    // Processing country
-    let response = await fetch(`https://api.webflow.com/v2/collections/6511b5541b122aea972eaf8f/items`, {
-      method: 'POST',
+    // Check if country exists
+    let response = await fetch(`https://api.webflow.com/v2/collections/6511b5541b122aea972eaf8f/items?query=${country}`, {
       headers: headers,
-      body: JSON.stringify({
-        fieldData: {
-          name: country,
-          slug: country.toLowerCase().replace(/\s+/g, '-')
-        }
-      })
     });
-    
-    if (response.status !== 200) {
-      const errorText = await response.text();
-      throw new Error(`Webflow API request failed with status code ${response.status}: ${errorText}`);
+    let data = await response.json();
+    let countryItemId;
+    if (data.items && data.items.length > 0) {
+      countryItemId = data.items[0]._id;  // Assuming the country name is unique
+    } else {
+      // Create country
+      response = await fetch(`https://api.webflow.com/v2/collections/6511b5541b122aea972eaf8f/items`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          fieldData: {
+            name: country,
+            slug: country.toLowerCase().replace(/\s+/g, '-')
+          }
+        })
+      });
+      data = await response.json();
+      countryItemId = data._id;
     }
 
-    // Execute tasks
-    let additionalFields = {};
+    // Generate Meta Title
     const metaTitle = await generateMetaTitle(city);
-    additionalFields['Meta Title'] = metaTitle;
 
-    // Processing city
-    response = await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items`, {
-      method: 'POST',
+    // Check if city exists
+    response = await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items?query=${city}`, {
       headers: headers,
-      body: JSON.stringify({
-        fieldData: {
-          name: city,
-          slug: city.toLowerCase().replace(/\s+/g, '-'),
-          ...additionalFields
-        }
-      })
     });
-
-    if (response.status !== 200) {
-      const errorText = await response.text();
-      throw new Error(`Webflow API request failed with status code ${response.status}: ${errorText}`);
+    data = await response.json();
+    let cityItemId;
+    if (data.items && data.items.length > 0) {
+      cityItemId = data.items[0]._id;  // Assuming the city name is unique
+    } else {
+      // Create city
+      response = await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          fieldData: {
+            name: city,
+            slug: city.toLowerCase().replace(/\s+/g, '-'),
+            'Meta Title': metaTitle,
+            'Country': countryItemId  // Assuming there's a reference field to link the city to the country
+          }
+        })
+      });
+      data = await response.json();
+      cityItemId = data._id;
     }
+
+    // Update city with additional fields if necessary
+    // (assuming you might have additional fields to update later on)
+    // if (additionalFields) {
+    //   await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityItemId}`, {
+    //     method: 'PATCH',
+    //     headers: headers,
+    //     body: JSON.stringify({ fieldData: additionalFields })
+    //   });
+    // }
 
     return res.status(200).json({ status: 'success' });
 
