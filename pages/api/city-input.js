@@ -1,8 +1,8 @@
 // pages/api/city-input.js
 
 import fetch from 'node-fetch';
-import taskConfig from './taskConfig'; 
-import { generateMetaTitle } from './generateMetaTitle';  
+import { generateMetaTitle } from './generateMetaTitle';
+import taskConfig from './taskConfig.json';
 
 const WEBFLOW_API_KEY = process.env.WEBFLOW_API_KEY;
 
@@ -130,37 +130,4 @@ export default async function handler(req, res) {
   }
 }
 
-// generateMetaTitle.js
 
-import axios from 'axios';
-import taskConfig from './taskConfig';
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-export async function generateMetaTitle(city) {
-  const config = taskConfig.generateMetaTitle;
-  const prompt = config.prompt.replace('{city}', city);
-
-  try {
-    const response = await axios.post(
-      config.endpoint,
-      {
-        prompt: prompt,
-        max_tokens: config.maxTokens
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    const metaTitle = response.data.choices[0].text.trim();
-    console.log('Generated meta title:', metaTitle);
-    return metaTitle;
-  } catch (error) {
-    console.error('Error generating meta title:', error);
-    throw error;
-  }
-}

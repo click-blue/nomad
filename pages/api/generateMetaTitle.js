@@ -1,8 +1,7 @@
-// generateMetaTitle.js
-
+// pages/api/generateMetaTitle.js
 
 import axios from 'axios';
-import taskConfig from './taskConfig';
+import taskConfig from './taskConfig.json';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
