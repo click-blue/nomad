@@ -26,17 +26,19 @@ export default async function handler(req, res) {
 
   const getOrCreateItem = async (collectionId, itemName, relatedCountryId = null, additionalFields = {}) => {
     try {
+      let itemId = null;
+  
+      // Check if the item already exists
       let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
         headers: headers
       });
-
+  
       if (response.status !== 200) {
         throw new Error(`Webflow API request failed with status code ${response.status}`);
       }
-
+  
       let data = await response.json();
   
-      let itemId = null;
       if (data.items) {
         const foundItem = data.items.find(item => item.fieldData.name === itemName);
         if (foundItem) {
@@ -51,7 +53,8 @@ export default async function handler(req, res) {
         if (relatedCountryId) {
           fieldData.country = relatedCountryId;
         }
-    
+  
+        // Create the item
         response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
           method: 'POST',
           headers: headers,
@@ -61,15 +64,36 @@ export default async function handler(req, res) {
             fieldData
           })
         });
-
-        if (response.status !== 201) {
+  
+        if (response.status !== 202) {
           throw new Error(`Webflow API request failed when creating item with status code ${response.status}`);
         }
 
+        // Get itemId from the response
         data = await response.json();
-        itemId = data.id;
-    
-        // Publish the item
+        itemId = data._id;
+  
+        // Poll for item creation completion
+        let creationCompleted = false;
+        while (!creationCompleted) {
+          // Make a request to check the item's status
+          response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`, {
+            headers: headers
+          });
+  
+          if (response.status === 200) {
+            // Item creation is complete
+            creationCompleted = true;
+          } else if (response.status !== 202) {
+            // An error occurred during polling
+            throw new Error(`Webflow API request failed during polling with status code ${response.status}`);
+          }
+  
+          // Wait for a moment before checking again
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+  
+        // Publish the item once creation is complete
         response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/publish`, {
           method: 'POST',
           headers: headers,
@@ -77,11 +101,11 @@ export default async function handler(req, res) {
             publishedItemIds: [itemId]
           })
         });
-
+  
         if (response.status !== 200) {
           throw new Error(`Webflow API request failed when publishing item with status code ${response.status}`);
         }
-
+  
         await response.json();
       }
   
@@ -91,6 +115,7 @@ export default async function handler(req, res) {
       throw error;
     }
   };
+  
 
   try {
     // Step 1: Check and publish country first, and get its ID
