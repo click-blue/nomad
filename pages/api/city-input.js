@@ -35,6 +35,8 @@ export default async function handler(req, res) {
       console.log(`Webflow response status: ${response.status}`);
 
       if (response.status !== 200) {
+        const errorText = await response.text();
+        console.log('Webflow response error text:', errorText);  // Log the error response text
         throw new Error(`Webflow API request failed with status code ${response.status}`);
       }
 
@@ -67,6 +69,8 @@ export default async function handler(req, res) {
         console.log(`Webflow response status: ${response.status}`);
 
         if (response.status !== 200) {
+          const errorText = await response.text();
+          console.log('Webflow response error text:', errorText);  // Log the error response text
           throw new Error(`Webflow API request failed when creating item with status code ${response.status}`);
         }
 
@@ -86,6 +90,8 @@ export default async function handler(req, res) {
         console.log(`Webflow response status: ${response.status}`);
 
         if (response.status !== 200) {
+          const errorText = await response.text();
+          console.log('Webflow response error text:', errorText);  // Log the error response text
           throw new Error(`Webflow API request failed when publishing item with status code ${response.status}`);
         }
 
@@ -108,9 +114,13 @@ export default async function handler(req, res) {
 
     // Execute tasks
     let additionalFields = {};
-    console.log("Executing tasks");
-    additionalFields['Meta Title'] = await generateMetaTitle(city);
-    console.log("Meta Title generated:", additionalFields['Meta Title']);
+    for (const taskName in taskConfig) {
+      console.log(`Processing task: ${taskName}`);
+      if (taskName === 'generateMetaTitle') {
+        additionalFields['Meta Title'] = await generateMetaTitle(city);
+      }
+      // Add more tasks here as needed
+    }
 
     // Step 2: Then check and publish city, linking it to the country
     console.log("Step 2: Processing city");
@@ -124,4 +134,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }
-
