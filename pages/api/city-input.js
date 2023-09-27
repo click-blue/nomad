@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       let itemId = null;
   
       // Check if the item already exists
-      let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
+      let response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
         headers: headers
       });
   
@@ -40,9 +40,9 @@ export default async function handler(req, res) {
       let data = await response.json();
   
       if (data.items) {
-        const foundItem = data.items.find(item => item.fieldData.name === itemName);
+        const foundItem = data.items.find(item => item.name === itemName);
         if (foundItem) {
-          itemId = foundItem.id;
+          itemId = foundItem._id;
         }
       }
   
@@ -55,17 +55,15 @@ export default async function handler(req, res) {
         }
   
         // Create the item
-        response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
+        response = await fetch(`https://api.webflow.com/collections/${collectionId}/items`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
-            isArchived: false,
-            isDraft: false,
-            fieldData
+            fields: fieldData
           })
         });
   
-        if (response.status !== 202) {
+        if (response.status !== 200) {
           throw new Error(`Webflow API request failed when creating item with status code ${response.status}`);
         }
 
@@ -73,32 +71,12 @@ export default async function handler(req, res) {
         data = await response.json();
         itemId = data._id;
   
-        // Poll for item creation completion
-        let creationCompleted = false;
-        while (!creationCompleted) {
-          // Make a request to check the item's status
-          response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/${itemId}`, {
-            headers: headers
-          });
-  
-          if (response.status === 200) {
-            // Item creation is complete
-            creationCompleted = true;
-          } else if (response.status !== 202) {
-            // An error occurred during polling
-            throw new Error(`Webflow API request failed during polling with status code ${response.status}`);
-          }
-  
-          // Wait for a moment before checking again
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-  
-        // Publish the item once creation is complete
-        response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/publish`, {
+        // Publish the item
+        response = await fetch(`https://api.webflow.com/collections/${collectionId}/items/publish`, {
           method: 'POST',
           headers: headers,
           body: JSON.stringify({
-            publishedItemIds: [itemId]
+            itemIds: [itemId]
           })
         });
   
@@ -146,3 +124,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }
+
