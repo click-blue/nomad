@@ -25,51 +25,71 @@ export default async function handler(req, res) {
   };
 
   const getOrCreateItem = async (collectionId, itemName, relatedCountryId = null, additionalFields = {}) => {
-    let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
-      headers: headers
-    });
-    let data = await response.json();
-  
-    let itemId = null;
-    if (data.items) {
-      const foundItem = data.items.find(item => item.fieldData.name === itemName);
-      if (foundItem) {
-        itemId = foundItem.id;
+    try {
+      let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
+        headers: headers
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Webflow API request failed with status code ${response.status}`);
       }
-    }
+
+      let data = await response.json();
   
-    if (!itemId) {
-      console.log(`Item not found, creating new item: ${itemName}`);
-      
-      const fieldData = { name: itemName, ...additionalFields };
-      if (relatedCountryId) {
-        fieldData.country = relatedCountryId;
+      let itemId = null;
+      if (data.items) {
+        const foundItem = data.items.find(item => item.fieldData.name === itemName);
+        if (foundItem) {
+          itemId = foundItem.id;
+        }
       }
   
-      response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          isArchived: false,
-          isDraft: false,
-          fieldData
-        })
-      });
-      data = await response.json();
-      itemId = data.id;
+      if (!itemId) {
+        console.log(`Item not found, creating new item: ${itemName}`);
+        
+        const fieldData = { name: itemName, ...additionalFields };
+        if (relatedCountryId) {
+          fieldData.country = relatedCountryId;
+        }
+    
+        response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            isArchived: false,
+            isDraft: false,
+            fieldData
+          })
+        });
+
+        if (response.status !== 201) {
+          throw new Error(`Webflow API request failed when creating item with status code ${response.status}`);
+        }
+
+        data = await response.json();
+        itemId = data.id;
+    
+        // Publish the item
+        response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/publish`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify({
+            publishedItemIds: [itemId]
+          })
+        });
+
+        if (response.status !== 200) {
+          throw new Error(`Webflow API request failed when publishing item with status code ${response.status}`);
+        }
+
+        await response.json();
+      }
   
-      // Publish the item
-      response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items/publish`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          publishedItemIds: [itemId]
-        })
-      });
-      await response.json();
+      return itemId;
+    } catch (error) {
+      console.error('Webflow API Error:', error.message);
+      throw error;
     }
-  
-    return itemId;
   };
 
   try {
@@ -97,7 +117,7 @@ export default async function handler(req, res) {
     console.log("Successfully processed both country and city");
     return res.status(200).json({ status: 'success' });
   } catch (error) {
-    console.log('Error:', JSON.stringify(error, null, 2));
+    console.error('Error:', error.message);
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }
