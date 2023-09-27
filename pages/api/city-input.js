@@ -13,7 +13,6 @@ async function checkOrCreateItem(collectionId, name) {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
-      'Content-Type': 'application/json',
       'Accept': 'application/json'
     }
   });
@@ -40,7 +39,7 @@ async function checkOrCreateItem(collectionId, name) {
       'Accept': 'application/json'
     },
     body: JSON.stringify({
-      fields: {
+      fieldData: {
         name,
         slug
       }
@@ -82,7 +81,7 @@ export default async function handler(req, res) {
         'Accept': 'application/json'
       },
       body: JSON.stringify({
-        fields: {
+        fieldData: {
           ...additionalFields
         }
       })
