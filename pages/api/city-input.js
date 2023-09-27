@@ -5,6 +5,57 @@ import { generateMetaTitle } from './generateMetaTitle';
 
 const WEBFLOW_API_KEY = process.env.WEBFLOW_API_KEY;
 
+async function checkOrCreateItem(collectionId, name) {
+  const slug = name.toLowerCase().replace(/\s+/g, '-');
+
+  // Check if item exists
+  let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({ query: { filter: { slug } } })
+  });
+
+  if (response.status !== 200) {
+    const errorText = await response.text();
+    throw new Error(`Webflow API request failed with status code ${response.status}: ${errorText}`);
+  }
+
+  const existingItems = await response.json();
+
+  // If item exists, return its ID
+  if (existingItems.items.length > 0) {
+    return existingItems.items[0]._id;
+  }
+
+  // Create a new item
+  response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
+    body: JSON.stringify({
+      fields: {
+        name,
+        slug
+      }
+    })
+  });
+
+  if (response.status !== 202) {
+    const errorText = await response.text();
+    throw new Error(`Webflow API request failed with status code ${response.status}: ${errorText}`);
+  }
+
+  const newItem = await response.json();
+  return newItem._id;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).end();
@@ -12,79 +63,36 @@ export default async function handler(req, res) {
 
   const { city, country } = req.body;
 
-  const headers = {
-    'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  };
-
   try {
-    // Check if country exists
-    let response = await fetch(`https://api.webflow.com/v2/collections/6511b5541b122aea972eaf8f/items?query=${country}`, {
-      headers: headers,
-    });
-    let data = await response.json();
-    let countryItemId;
-    if (data.items && data.items.length > 0) {
-      countryItemId = data.items[0]._id;  // Assuming the country name is unique
-    } else {
-      // Create country
-      response = await fetch(`https://api.webflow.com/v2/collections/6511b5541b122aea972eaf8f/items`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          fieldData: {
-            name: country,
-            slug: country.toLowerCase().replace(/\s+/g, '-')
-          }
-        })
-      });
-      data = await response.json();
-      countryItemId = data._id;
-    }
+    // Processing country
+    const countryId = await checkOrCreateItem('6511b5541b122aea972eaf8f', country);
 
-    // Generate Meta Title
+    // Execute tasks
+    let additionalFields = {};
     const metaTitle = await generateMetaTitle(city);
+    additionalFields['Meta Title'] = metaTitle;
 
-    // Check if city exists
-    response = await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items?query=${city}`, {
-      headers: headers,
+    // Processing city
+    const cityId = await checkOrCreateItem('6511b5388842397b68f73aad', city);
+    await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        fields: {
+          ...additionalFields
+        }
+      })
     });
-    data = await response.json();
-    let cityItemId;
-    if (data.items && data.items.length > 0) {
-      cityItemId = data.items[0]._id;  // Assuming the city name is unique
-    } else {
-      // Create city
-      response = await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          fieldData: {
-            name: city,
-            slug: city.toLowerCase().replace(/\s+/g, '-'),
-            'Meta Title': metaTitle,
-            'Country': countryItemId  // Assuming there's a reference field to link the city to the country
-          }
-        })
-      });
-      data = await response.json();
-      cityItemId = data._id;
-    }
-
-    // Update city with additional fields if necessary
-    // (assuming you might have additional fields to update later on)
-    // if (additionalFields) {
-    //   await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityItemId}`, {
-    //     method: 'PATCH',
-    //     headers: headers,
-    //     body: JSON.stringify({ fieldData: additionalFields })
-    //   });
-    // }
 
     return res.status(200).json({ status: 'success' });
 
   } catch (error) {
+    console.error('Error occurred:', error.message);
+    console.error('Stack trace:', error.stack);
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }
