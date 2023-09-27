@@ -9,14 +9,13 @@ async function checkOrCreateItem(collectionId, name) {
   const slug = name.toLowerCase().replace(/\s+/g, '-');
 
   // Check if item exists
-  let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items`, {
+  let response = await fetch(`https://api.webflow.com/v2/collections/${collectionId}/items?filter[slug]=${slug}`, {
     method: 'GET',
     headers: {
       'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
       'Content-Type': 'application/json',
       'Accept': 'application/json'
     },
-    body: JSON.stringify({ query: { filter: { slug } } })
   });
 
   if (response.status !== 200) {
@@ -74,7 +73,7 @@ export default async function handler(req, res) {
 
     // Processing city
     const cityId = await checkOrCreateItem('6511b5388842397b68f73aad', city);
-    await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityId}`, {
+    const updateResponse = await fetch(`https://api.webflow.com/v2/collections/6511b5388842397b68f73aad/items/${cityId}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${WEBFLOW_API_KEY}`,
@@ -87,6 +86,11 @@ export default async function handler(req, res) {
         }
       })
     });
+
+    if (updateResponse.status !== 202) {
+      const errorText = await updateResponse.text();
+      throw new Error(`Webflow API request failed with status code ${updateResponse.status}: ${errorText}`);
+    }
 
     return res.status(200).json({ status: 'success' });
 
