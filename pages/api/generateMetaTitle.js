@@ -20,11 +20,11 @@ export async function generateMetaTitle(city) {
       }
     });
 
-    console.log('OpenAI response:', JSON.stringify(response.data, null, 2));
     const generatedTitle = response.data.choices[0].text.trim();
     return generatedTitle;
+
   } catch (error) {
-    console.error('OpenAI API Error:', error.message);
     throw error;
   }
 }
+
