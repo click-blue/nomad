@@ -108,14 +108,9 @@ export default async function handler(req, res) {
 
     // Execute tasks
     let additionalFields = {};
-    for (const taskName in taskConfig) {
-      console.log(`Processing task: ${taskName}`);
-      if (taskName === 'generateMetaTitle') {
-        additionalFields['Meta Title'] = await generateMetaTitle(city);
-        console.log('Meta Title Generated:', additionalFields['Meta Title']);
-      }
-      // Add more tasks here as needed
-    }
+    console.log("Executing tasks");
+    additionalFields['Meta Title'] = await generateMetaTitle(city);
+    console.log("Meta Title generated:", additionalFields['Meta Title']);
 
     // Step 2: Then check and publish city, linking it to the country
     console.log("Step 2: Processing city");
@@ -126,9 +121,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ status: 'success' });
   } catch (error) {
     console.error('Error:', error.message);
-    if (error.response) {
-      console.error('Error Response:', JSON.stringify(error.response, null, 2));
-    }
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }

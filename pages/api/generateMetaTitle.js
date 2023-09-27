@@ -1,4 +1,4 @@
-// generateMetaTitle.js
+// pages/api/generateMetaTitle.js
 
 import axios from 'axios';
 import taskConfig from './taskConfig.json';
@@ -11,27 +11,20 @@ export async function generateMetaTitle(city) {
 
   try {
     const response = await axios.post(config.endpoint, {
-      prompt,
-      max_tokens: config.maxTokens,
+      prompt: prompt,
+      max_tokens: config.maxTokens
     }, {
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
+        'Content-Type': 'application/json'
+      }
     });
 
-    if (response.data.choices && response.data.choices[0]) {
-      const metaTitle = response.data.choices[0].text.trim();
-      console.log('OpenAI Response:', metaTitle);
-      return metaTitle;
-    } else {
-      throw new Error('Invalid response from OpenAI');
-    }
+    console.log('OpenAI response:', JSON.stringify(response.data, null, 2));
+    const generatedTitle = response.data.choices[0].text.trim();
+    return generatedTitle;
   } catch (error) {
     console.error('OpenAI API Error:', error.message);
-    if (error.response) {
-      console.error('Error Response:', JSON.stringify(error.response, null, 2));
-    }
     throw error;
   }
 }
