@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
-        fields: {
+        fieldData: {
           name: country,
           slug: country.toLowerCase().replace(/\s+/g, '-')
         }
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: headers,
       body: JSON.stringify({
-        fields: {
+        fieldData: {
           name: city,
           slug: city.toLowerCase().replace(/\s+/g, '-'),
           ...additionalFields
@@ -65,4 +65,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ status: 'error', error: error.message });
   }
 }
-
